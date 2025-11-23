@@ -1,6 +1,7 @@
 type User = { user_id: string; display_name: string };
 type Roster = { roster_id: number; owner_id: string; players: string[] };
 
+// Go through trending list and return user of who it belongs to
 function mapPlayersToOwners(
   trendingPlayers: string[],
   rosters: Roster[],
