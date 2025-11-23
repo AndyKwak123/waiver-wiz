@@ -1,5 +1,6 @@
 import { Roster, User } from "./types";
 
+// Go through trending list and return user of who it belongs to
 function mapPlayersToOwners(
   trendingPlayers: string[],
   rosters: Roster[],
