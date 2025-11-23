@@ -1,5 +1,4 @@
-type User = { user_id: string; display_name: string };
-type Roster = { roster_id: number; owner_id: string; players: string[] };
+import { Roster, User } from "./types";
 
 function mapPlayersToOwners(
   trendingPlayers: string[],
