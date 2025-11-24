@@ -5,7 +5,6 @@ export function mapPlayersToOwners(
   trendingPlayers: Player[],
   leagueData: any
 ) {
-
   const userMap = leagueData?.map((user: User) => { 
     return { 
       [user.owner_id]: user.players
