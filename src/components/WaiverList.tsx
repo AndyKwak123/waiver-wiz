@@ -1,5 +1,5 @@
-import { AnyARecord } from "dns";
 import { useState, useEffect } from "react";
+import { mapPlayersToOwners } from "../functions";
 
 type Player = {
   player_id: number;
@@ -7,8 +7,20 @@ type Player = {
 };
 
 export default function WaiverList() {
-  const [players, setPlayers] = useState<Player[]>([]);
-  const leagueId = "1278224878310260736";
+  const [trendingPlayers, setTrendingPlayers] = useState<Player[]>([]);
+  const [leagueData, setLeagueData] = useState<any>(null);
+  const LEAGUE_ID = "1278224878310260736";
+
+
+  let playerOwnerMap;
+
+  if(trendingPlayers && leagueData) { 
+    console.log('league data', leagueData);
+    console.log('users',leagueData?.users)
+    console.log('rosters',leagueData?.rosters)
+    playerOwnerMap = mapPlayersToOwners(trendingPlayers, leagueData,);
+    console.log('playerOwnerMap', playerOwnerMap);
+  }
 
   async function fetchData() {
     try {
@@ -18,7 +30,7 @@ export default function WaiverList() {
       const allPlayers = await fetch("https://api.sleeper.app/v1/players/nba");
 
       const myLeague = await fetch(
-        `https://api.sleeper.app/v1/league/${leagueId}/rosters`
+        `https://api.sleeper.app/v1/league/${LEAGUE_ID}/rosters`
       )
         .then((r) => r.json())
         .catch(() => null);
@@ -38,59 +50,40 @@ export default function WaiverList() {
       });
 
       trendingPlayers.sort((a: any, b: any) => b.count - a.count);
-      console.log("trending players", trendingPlayers);
 
-      setPlayers(trendingPlayers);
+      setTrendingPlayers(trendingPlayers);
+      setLeagueData(myLeague);
       return {
-        playerData,
         trendingData,
+        playerData,
         myLeague,
       };
     } catch (err: any) {
       console.log(err);
     }
-  }
-
-  type User = { user_id: string; display_name: string };
-  type Roster = { roster_id: number; owner_id: string; players: string[] };
-
-  function mapPlayersToOwners(
-    trendingPlayers: string[],
-    rosters: Roster[],
-    users: User[]
-  ) {
-    // Map owner_id -> user name
-    const userMap = Object.fromEntries(
-      users.map((u) => [u.user_id, u.display_name])
-    );
-
-    // Map player_id -> owner
-    const playerOwnerMap: Record<string, string | null> = {};
-
-    for (const playerId of trendingPlayers) {
-      const roster = rosters.find((r) => r.players.includes(playerId));
-      playerOwnerMap[playerId] = roster ? userMap[roster.owner_id] : null;
-    }
-
-    return playerOwnerMap;
-  }
-
+  } 
   useEffect(() => {
     fetchData();
-    if (players) {
-      console.log(fetchData());
-    }
   }, []);
 
-  console.log("players", players);
 
   return (
-    <ul>
-      {" "}
-      {players?.map((item) => (
-        <li> {item.full_name} </li>
-      ))}{" "}
-    </ul>
+  
+  <div className="waiverList">
+    <div className="waiverListHeader">
+      <h1>Waiver List</h1>
+    </div>
+    <div className="waiverListBody">
+      <ul> {playerOwnerMap && playerOwnerMap.map((p: any) => (
+          <li key={p.player_id}>
+            <div className="waiverListPlayer">
+              {p.player_name} 
+              {p.owner_id && `-> ${p.owner_id}` }
+            </div>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
   );
 }
-
