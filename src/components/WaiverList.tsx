@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { mapPlayersToOwners } from "../functions";
+import { User } from "../types";
+import { LEAGUE_ID } from "../constants";
 
 type Player = {
   player_id: number;
@@ -9,17 +11,28 @@ type Player = {
 export default function WaiverList() {
   const [trendingPlayers, setTrendingPlayers] = useState<Player[]>([]);
   const [leagueData, setLeagueData] = useState<any>(null);
-  const LEAGUE_ID = "1278224878310260736";
+  const [userNames, setUserNames] = useState<string[]>([]);
 
-
+  console.log('userNames', userNames);
   let playerOwnerMap;
 
   if(trendingPlayers && leagueData) { 
-    console.log('league data', leagueData);
-    console.log('users',leagueData?.users)
-    console.log('rosters',leagueData?.rosters)
-    playerOwnerMap = mapPlayersToOwners(trendingPlayers, leagueData,);
-    console.log('playerOwnerMap', playerOwnerMap);
+    playerOwnerMap = mapPlayersToOwners(trendingPlayers, leagueData);
+
+    if(userNames) { 
+      const ownerIndexMap: { [ownerId: string]: number } = {};
+      leagueData.forEach((user: User, index: number) => {
+        ownerIndexMap[user.owner_id] = index;
+      })
+      playerOwnerMap = playerOwnerMap.map(player => {
+        const ownerIndex = ownerIndexMap[player.owner_id] ?? null;
+        const userName = userNames[ownerIndex];
+        return {
+          ...player,
+          user_name: userName
+        }
+      })
+    }
   }
 
   async function fetchData() {
@@ -66,7 +79,24 @@ export default function WaiverList() {
     fetchData();
   }, []);
 
+  useEffect (()=> { 
+    if(leagueData) { 
 
+
+  const getUserNames = async () => { 
+    const ownerDataPromises = leagueData.map(async (user: User) => {
+      const res = await fetch(`https://api.sleeper.app/v1/user/${user.owner_id}`);
+      return res.json();
+    });
+  
+    const ownerDataList = await Promise.all(ownerDataPromises);
+    const userNames =  ownerDataList.map(owner => owner.display_name);
+    setUserNames(userNames);    
+  }
+  getUserNames();
+    }
+  }, [leagueData]);
+  console.log('userNames', userNames);
   return (
   
   <div className="waiverList">
@@ -78,7 +108,7 @@ export default function WaiverList() {
           <li key={p.player_id}>
             <div className="waiverListPlayer">
               {p.player_name} 
-              {p.owner_id && `-> ${p.owner_id}` }
+              {p.user_name && `-> ${p.user_name}` }
             </div>
             </li>
           ))}
